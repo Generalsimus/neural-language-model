@@ -5,7 +5,9 @@ import (
 )
 
 type Layer struct {
-	inputs []float64
+	Inputs  []float64
+	weights [][]float32
+	biases  []float32
 }
 
 func (l *Layer) Add(el interface{}) {
@@ -19,14 +21,20 @@ func (l *Layer) Add(el interface{}) {
 	}
 }
 func (l *Layer) AddNum(num float64) {
-	for index, value := range l.inputs {
-		l.inputs[index] = value + num
+	for index, value := range l.Inputs {
+		l.Inputs[index] = value + num
 	}
 }
 
 func (l *Layer) AddLayer(layer Layer) {
-	for index, value := range l.inputs {
-		l.inputs[index] = value + layer.inputs[index]
+	for index, value := range l.Inputs {
+		l.Inputs[index] = value + layer.Inputs[index]
+	}
+}
+
+func (l *Layer) Map(callBackGetValue func(v float64, index int) float64) {
+	for index, value := range l.Inputs {
+		l.Inputs[index] = callBackGetValue(value, index)
 	}
 }
 
@@ -41,14 +49,25 @@ func (l *Layer) Multiply(el interface{}) {
 	}
 }
 
+// TODO: fix it
+func (l *Layer) Transpose(num float64) Layer {
+	inputsCount := len(l.Inputs)
+	inputs := make([]float64, inputsCount)
+	for index, value := range l.Inputs {
+		inputs[inputsCount-index-1] = value
+	}
+	return Layer{
+		Inputs: inputs,
+	}
+}
 func (l *Layer) MultiplyNum(num float64) {
-	for index, value := range l.inputs {
-		l.inputs[index] = value * num
+	for index, value := range l.Inputs {
+		l.Inputs[index] = value * num
 	}
 }
 
 func (l *Layer) MultiplyLayer(layer Layer) {
-	for index, value := range l.inputs {
-		l.inputs[index] = value * layer.inputs[index]
+	for index, value := range l.Inputs {
+		l.Inputs[index] = value * layer.Inputs[index]
 	}
 }

@@ -10,6 +10,10 @@ type Network struct {
 	// inputs []float64
 }
 
+func (n *Network) Forward(inputs []float64) {
+	// n.Layers = append(n.Layers, layer)
+}
+
 func (n *Network) AddLayer(layer Layer) {
 	n.Layers = append(n.Layers, layer)
 }
