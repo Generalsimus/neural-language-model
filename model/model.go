@@ -3,10 +3,12 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"model/utils"
 )
 
 type Network struct {
-	Layers []Layer
+	Layers    []Layer
+	learnRate float64
 	// inputs []float64
 }
 
@@ -29,6 +31,37 @@ func (n Network) String() string {
 
 func NewNetwork() Network {
 	return Network{
-		Layers: []Layer{},
+		Layers:    []Layer{},
+		learnRate: 0.1,
 	}
+}
+
+type InputNetwork struct {
+	inputs    []Input
+	learnRate float64
+}
+
+func (network InputNetwork) Train(inputsNum []float64, targetsNum []float64) {
+	inputs := network.NumToInputs(inputsNum)
+	targets := network.NumToInputs(targetsNum)
+	fmt.Println("INPUT: ", inputs, "TARGET: ", targets)
+
+}
+
+func (network InputNetwork) NumToInputs(inputsNum []float64) []Input {
+	inputs := make([]Input, len(inputsNum))
+
+	for index, input := range network.inputs {
+		value := utils.Find(inputsNum, input.Value)
+		if value == input.Value {
+			inputs[index] = Input{
+				Value:    value,
+				Connects: []Connect{},
+			}
+		} else {
+			inputs[index] = input
+		}
+	}
+
+	return inputs
 }

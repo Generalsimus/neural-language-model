@@ -6,8 +6,14 @@ import (
 
 type Layer struct {
 	Inputs  []float64
-	weights [][]float32
-	biases  []float32
+	Weights [][]float32
+	Biases  []float32
+}
+
+func (l *Layer) AddInputItem(item float64) {
+	l.Inputs = append(l.Inputs, item)
+	l.Weights = append(l.Weights, []float32{})
+	l.Biases = append(l.Biases, 1)
 }
 
 func (l *Layer) Add(el interface{}) {
@@ -20,6 +26,7 @@ func (l *Layer) Add(el interface{}) {
 		panic(fmt.Sprintf("Layer Add Argument Type Error: %d", el))
 	}
 }
+
 func (l *Layer) AddNum(num float64) {
 	for index, value := range l.Inputs {
 		l.Inputs[index] = value + num
@@ -69,5 +76,13 @@ func (l *Layer) MultiplyNum(num float64) {
 func (l *Layer) MultiplyLayer(layer Layer) {
 	for index, value := range l.Inputs {
 		l.Inputs[index] = value * layer.Inputs[index]
+	}
+}
+
+func NewLayer() Layer {
+	return Layer{
+		Inputs:  []float64{},
+		Weights: [][]float32{},
+		Biases:  []float32{},
 	}
 }
