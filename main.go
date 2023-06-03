@@ -10,17 +10,20 @@ func main() {
 	// input := [][]float64{
 	// 	[]float64{2, 5},
 	// }
-	inputLayer := model.NewLayerInput([]float64{2, 5})
-
-	inputLayer.ConnectLayer(model.CreateNetworkModel([]int{
+	net := model.CreateNetworkModel([]int{
 		3,
 		2,
-	}))
+	})
 
-	net := inputLayer
-	net.ForwardPropagation()
-	net.BackPropagation([]float64{1, 2}, 0.01)
-	fmt.Println("SS", net)
+	// net := inputLayer
+	// net.ForwardPropagation()
+	// fmt.Println("SS1: ", net)
+	// net.BackPropagation([]float64{1, 2}, 0.01)
+	input := []float64{1, 2, 3}
+	output := []float64{3, 1}
+	fmt.Println("SS2: ", net)
+	net.Train(input, output, 0.01)
+	fmt.Println("SS3: ", net)
 	// model.CreateNetworkModel([]int{
 	// 	10,
 	// 	10,
