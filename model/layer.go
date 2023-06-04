@@ -2,15 +2,15 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"model/utils"
 )
 
 type Layer struct {
-	Inputs      []float64
-	InputWidths [][]float64
-	// BiasWidths  []float64
-	Biases    []float64
-	NextLayer *Layer
+	// InputSize   int
+	LayerWidths [][]float64
+	Biases      []float64
+	NextLayer   *Layer
 }
 
 func (l Layer) String() string {
@@ -18,116 +18,97 @@ func (l Layer) String() string {
 	return string(data)
 }
 
-func (l *Layer) ConnectLayer(nextLayer *Layer) (*Layer, *Layer) {
-	inputs := l.Inputs
-	nextInputs := nextLayer.Inputs
-	inputsSize := len(inputs)
-	nextInputSize := len(nextInputs)
-	InputWidths := [][]float64{}
-
-	biases := make([]float64, nextInputSize)
-	for index, _ := range biases {
-		biases[index] = 1
-	}
-	for l := 0; l < inputsSize; l++ {
-		// for range inputs {
-		widths := make([]float64, nextInputSize)
-		for index, _ := range widths {
-			widths[index] = 0.15 // rand.Float64()
+func (l *Layer) Fill(inputSize int, outPutSize int) {
+	fmt.Println("SIZE: ", inputSize, outPutSize)
+	//////////////////////////////
+	layerWidths := [][]float64{}
+	for i := 0; i < outPutSize; i++ {
+		inputWidths := []float64{}
+		for i := 0; i < inputSize; i++ {
+			inputWidths = append(inputWidths, 0.5)
 		}
-		InputWidths = append(InputWidths, widths)
-	}
 
+		layerWidths = append(layerWidths, inputWidths)
+	}
+	fmt.Println("layerWidths: ", layerWidths)
+	//////////////////////////////
+	//////////////////////////////
+	biases := make([]float64, outPutSize)
+	for i := 0; i < outPutSize; i++ {
+		biases[i] = 1
+	}
+	//////////////////////////////
+	l.LayerWidths = layerWidths
 	l.Biases = biases
-	l.InputWidths = InputWidths
-	l.NextLayer = nextLayer
-	// fmt.Println()
-	return l, nextLayer
+	//////////////////////////////
 }
 
-func (l *Layer) ForwardPropagation() {
-	if l.NextLayer == nil {
-		return
-	}
-	nextLayer := l.NextLayer
-	nextLayerInputs := nextLayer.Inputs
-	inputWidths := l.InputWidths
+func (l *Layer) Forward(inputs []float64) []float64 {
+	layerWidths := l.LayerWidths
 
-	for nextLayerInputIndex, _ := range nextLayerInputs {
+	nextLayerInputs := make([]float64, len(layerWidths))
+	for layerWidthsIndex, inputWidths := range layerWidths {
 		var newInput float64 = 0
-		for inputIndex, input := range l.Inputs {
-
-			newInput += inputWidths[inputIndex][nextLayerInputIndex] * input
-
+		for index, inputWidth := range inputWidths {
+			newInput += inputWidth * inputs[index]
 		}
-
-		nextLayerInputs[nextLayerInputIndex] = utils.Sigmoid(newInput + l.Biases[nextLayerInputIndex])
+		nextLayerInputs[layerWidthsIndex] = newInput
 	}
-
-	//////////////////////////////////////////////////////////
-	l.NextLayer.ForwardPropagation()
-}
-
-func (l *Layer) BackPropagation(output []float64, learnRate float64) []float64 {
-
+	fmt.Println("FORWARD: ", nextLayerInputs)
 	if l.NextLayer == nil {
-		inputs := l.Inputs
-		inputsSize := len(inputs)
-		if inputsSize != len(output) {
-			panic("INPUT SIZE NOT EQUAL OUTPUT SIZE")
+		return nextLayerInputs
+	}
+
+	return l.NextLayer.Forward(nextLayerInputs)
+}
+
+func (l *Layer) Train(inputs []float64, desiredOutputs []float64, learnRate float64) []float64 {
+	layerWidths := l.LayerWidths
+
+	nextLayerInputs := make([]float64, len(layerWidths))
+	for layerWidthsIndex, inputWidths := range layerWidths {
+		var newInput float64 = 0
+		for index, inputWidth := range inputWidths {
+			newInput += inputWidth * inputs[index]
 		}
-		newInputs := make([]float64, inputsSize)
-		for index, input := range inputs {
-			newInputs[index] = input - output[index]
+		nextLayerInputs[layerWidthsIndex] = newInput
+	}
+	fmt.Println("FORWARD: ", nextLayerInputs)
+	if l.NextLayer == nil {
+		// return nextLayerInputs
+		deltaOutput := make([]float64, len(inputs))
+		for index, desiredOutput := range desiredOutputs {
+			inputValue := nextLayerInputs[index]
+			deltaOutput[index] = utils.Derivative(inputValue) * (desiredOutput - inputValue)
 		}
 
-		l.Inputs = newInputs
-		return newInputs
+		return deltaOutput
+	}
+
+	///////////////////////////////////////////////////////
+	var nextLayerDeltaOutput []float64
+	if l.NextLayer == nil {
+		nextLayerDeltaOutput = make([]float64, len(nextLayerInputs))
+		for index, desiredOutput := range desiredOutputs {
+			inputValue := nextLayerInputs[index]
+			nextLayerDeltaOutput[index] = utils.Derivative(inputValue) * (desiredOutput - inputValue)
+		}
 	} else {
-		delta := l.NextLayer.BackPropagation(output, learnRate)
-		for indexInput, widths := range l.InputWidths {
-			for IndexNextInput, width := range widths {
+		nextLayerDeltaOutput = l.NextLayer.Train(nextLayerInputs, desiredOutputs, learnRate)
+	}
+	///////////////////////////////////////////////////////
+	deltaOutput := make([]float64, len(inputs))
 
-				widths[IndexNextInput] = width + (-learnRate * delta[IndexNextInput] * l.Inputs[indexInput])
-			}
+	for inputIndex, inputValue := range inputs {
+		derivativeInput := utils.Derivative(inputValue)
+		var deltaInput float64 = 0
+		widths := l.LayerWidths[inputIndex]
 
+		for _, width := range widths {
+			deltaInput += derivativeInput * (width * nextLayerDeltaOutput[inputIndex])
 		}
-		for index, bias := range l.Biases {
-			l.Biases[index] = bias + (-learnRate * delta[index])
-		}
-		newDeltaInput := make([]float64, len(l.Inputs))
-		for indexInput, widths := range l.InputWidths {
-			var sum float64 = 0
-			for IndexNextInput, width := range widths {
-				sum += width * delta[IndexNextInput]
-			}
-			newDeltaInput[indexInput] = sum * utils.SigmoidDerivative(l.Inputs[indexInput])
-
-		}
-
-		l.Inputs = newDeltaInput
+		deltaOutput[inputIndex] = deltaInput
 	}
 
-	return l.Inputs
-
-}
-func (l *Layer) Train(input []float64, output []float64, learnRate float64) {
-	inputLayer := NewLayerInput(input)
-	inputLayer.ConnectLayer(l)
-
-	l.ForwardPropagation()
-
-	l.BackPropagation(output, learnRate)
-
-}
-
-func NewLayerEmpty(size int) *Layer {
-	return &Layer{
-		Inputs: make([]float64, size),
-	}
-}
-func NewLayerInput(input []float64) *Layer {
-	return &Layer{
-		Inputs: input,
-	}
+	return deltaOutput
 }
