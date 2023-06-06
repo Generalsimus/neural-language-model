@@ -12,7 +12,7 @@ func main() {
 	// }
 	net := model.CreateModel([]int{
 		3,
-		4,
+		5,
 		2,
 	}, 0.01)
 
@@ -20,11 +20,15 @@ func main() {
 	// net.ForwardPropagation()
 	// fmt.Println("SS1: ", net)
 	// net.BackPropagation([]float64{1, 2}, 0.01)
-	input := []float64{1, 2, 3}
-	output := []float64{3, 1}
+	// input := []float64{1, 2, 3}
+	// output := []float64{0, 1}
 	fmt.Println("SS2: ", net)
-	net.Train(input, output)
-	fmt.Println("SS3: ", net.Forward(input))
+	net.Train([]float64{1, 2, 3}, []float64{0, 1})
+	net.Train([]float64{1, 5, 3}, []float64{1, 0})
+	fmt.Println("Forward1: ", net.Forward([]float64{1, 2, 3}))
+	fmt.Println("Forward2: ", net.Forward([]float64{1, 5, 3}))
+	// fmt.Println("Forward2: ", net.Forward(input))
+	fmt.Println("SS2: ", net)
 
 	// fmt.Println("SS3: ", net.Forward(input))
 
