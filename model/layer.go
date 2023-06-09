@@ -52,7 +52,8 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 		for index, inputWidth := range inputWidths {
 			newInput += inputWidth * inputs[index]
 		}
-		nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput + l.Biases[layerWidthsIndex])
+		nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput)
+		// nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput + l.Biases[layerWidthsIndex])
 	}
 	// fmt.Println("FORWARD: ", nextLayerInputs)
 	if l.NextLayer == nil {
@@ -63,6 +64,7 @@ func (l *Layer) Forward(inputs []float64) []float64 {
 }
 
 func (l *Layer) Train(inputs []float64, desiredOutputs []float64, learnRate float64) []float64 {
+	// FORWARD ////////////////////////////////////////////
 	layerWidths := l.LayerWidths
 
 	nextLayerInputs := make([]float64, len(layerWidths))
@@ -71,29 +73,31 @@ func (l *Layer) Train(inputs []float64, desiredOutputs []float64, learnRate floa
 		for index, inputWidth := range inputWidths {
 			newInput += inputWidth * inputs[index]
 		}
-		nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput + l.Biases[layerWidthsIndex])
+		nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput)
+		// nextLayerInputs[layerWidthsIndex] = utils.Sigmoid(newInput + l.Biases[layerWidthsIndex])
 	}
 	// fmt.Println("FORWARD: ", nextLayerInputs)
 
-	///////////////////////////////////////////////////////
+	// BACK PROPAGATION ///////////////////////////////////
 	var nextLayerDeltaOutput []float64
 	if l.NextLayer == nil {
 		nextLayerDeltaOutput = make([]float64, len(nextLayerInputs))
 		for index, desiredOutput := range desiredOutputs {
 			inputValue := nextLayerInputs[index]
-			nextLayerDeltaOutput[index] = utils.Derivative(inputValue) * (desiredOutput - inputValue)
+			nextLayerDeltaOutput[index] = inputValue - desiredOutput
+			// nextLayerDeltaOutput[index] = utils.Derivative(inputValue) * (desiredOutput - inputValue)
 		}
 	} else {
 		nextLayerDeltaOutput = l.NextLayer.Train(nextLayerInputs, desiredOutputs, learnRate)
 	}
-	///////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////
 	deltaOutput := make([]float64, len(inputs))
 
 	for inputIndex, input := range inputs {
 		var deltaInput float64 = 0
 		derivativeInput := utils.Derivative(input)
-		// for widthsIndex, _ := range l.LayerWidths {
+
 		for nextLayerDeltaIndex, nextLayerDelta := range nextLayerDeltaOutput {
 			width := l.LayerWidths[nextLayerDeltaIndex][inputIndex]
 
